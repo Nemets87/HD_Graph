@@ -1,0 +1,97 @@
+Да, на Linux Mint можно настроить отключение дискретной видеокарты NVIDIA GeForce RTX 4060 для экономии батареи и использовать встроенную графику Intel Core i7-13650HX. Вот пошаговая инструкция:
+
+### 1. Проверка гибридной графики
+Убедитесь, что система распознает оба GPU:
+```bash
+lspci | grep VGA
+```
+Вы должны увидеть оба адаптера: Intel и NVIDIA.
+
+### 2. Установка драйверов
+- **Intel**: Драйвер `mesa` обычно предустановлен
+- **NVIDIA**: Используйте "Driver Manager" в Linux Mint для установки проприетарного драйвера (рекомендуется версия 535+)
+
+### 3. Установка системных утилит
+```bash
+sudo apt install nvidia-prime nvidia-settings mesa-utils
+```
+
+### 4. Переключение на интегрированную графику
+**Способ 1: Через настройки NVIDIA**
+```bash
+nvidia-settings
+```
+1. Перейдите: "PRIME Profiles" → "Intel (Power Saving Mode)"
+2. Перезагрузите систему
+
+**Способ 2: Терминал**
+```bash
+sudo prime-select intel
+sudo reboot
+```
+
+### 5. Проверка активного GPU
+После перезагрузки:
+```bash
+glxinfo | grep "OpenGL renderer"
+```
+Должно отображаться: `Intel Graphics` (не NVIDIA)
+
+### 6. Настройка двух экранов на Intel GPU
+1. Подключите оба монитора
+2. Используйте стандартный инструмент Mint "Display Settings"
+3. При проблемах с определением мониторов:
+```bash
+xrandr --auto
+```
+
+### 7. Отключение NVIDIA (опционально)
+Для полного выключения карты (чтобы не потребляла энергию):
+```bash
+sudo nano /etc/modprobe.d/blacklist-nvidia.conf
+```
+Добавьте:
+```conf
+blacklist nvidia
+blacklist nvidia_drm
+blacklist nvidia_modeset
+options nouveau modeset=0
+```
+Обновите конфигурацию:
+```bash
+sudo update-initramfs -u
+sudo reboot
+```
+
+### 8. Проверка энергопотребления
+Установите:
+```bash
+sudo apt install powertop
+```
+Запустите и проверьте разряд батареи:
+```bash
+sudo powertop
+```
+
+### Важные примечания
+1. **Порты дисплея**: Внешние HDMI/DisplayPort могут быть физически подключены к NVIDIA. Если после отключения внешний экран не работает - потребуется оставить гибридный режим:
+   ```bash
+   sudo prime-select on-demand
+   ```
+2. **Производительность**: Встроенная графика Intel (Xe) слабее RTX 4060, но для офисных задач достаточно
+3. **Гибридный режим**: Для приложений, требующих NVIDIA, запускайте их с префиксом:
+   ```bash
+   __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia program_name
+   ```
+
+### Альтернативное решение (для продвинутых)
+Используйте **system76-power** (совместим с ASUS):
+```bash
+sudo add-apt-repository ppa:system76-dev/stable
+sudo apt update
+sudo apt install system76-power
+sudo system76-power graphics integrated
+sudo reboot
+```
+
+Данная конфигурация максимально приближена к работе Macbook M1 Pro по энергоэффективности, но с некоторыми компромиссами в производительности графики.
